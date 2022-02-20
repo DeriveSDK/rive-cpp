@@ -4,6 +4,7 @@
 #include "rive/shapes/paint/color.hpp"
 #include "rive/command_path.hpp"
 #include "rive/layout.hpp"
+#include "rive/refcnt.hpp"
 #include "rive/math/aabb.hpp"
 #include "rive/math/mat2d.hpp"
 #include "rive/shapes/paint/blend_mode.hpp"
@@ -12,9 +13,13 @@
 #include <cmath>
 #include <stdio.h>
 #include <cstdint>
+#include <vector>
 
 namespace rive {
     class Vec2D;
+
+    using Unichar = int32_t;
+    using GlyphID = uint16_t;
 
     class RenderFont {
     public:
@@ -26,7 +31,7 @@ namespace rive {
         };
         
         virtual int countAxes() const { return 0; }
-        virtual std::vector<AxisInfo> getAxes() const { return std::vector<AxisInfo>; }
+        virtual std::vector<AxisInfo> getAxes() const { return std::vector<AxisInfo>(); }
         
         // TODO: getGlyphPath(index) -> rawpath
     };
@@ -41,12 +46,12 @@ namespace rive {
         rcp<RenderFont>         font;
         float                   size;
 
-        size_t                  startTextIndex;
-        std::vector<uint16_t>   glyphs;
+        uint32_t                startTextIndex;
+        std::vector<GlyphID>    glyphs;
         std::vector<float>      xpos;   // xpos.size() == glyphs.size() + 1
     };
 
-    extern std::vector<RenderGlyphRun> shapeText(const uint32_t text[], size_t textCount,
+    extern std::vector<RenderGlyphRun> shapeText(const Unichar text[], size_t textCount,
                                                  const RenderTextRun[], size_t runCount);
 
     enum class RenderPaintStyle { stroke, fill };
