@@ -90,7 +90,8 @@ static bool blit_atoms(const Atom32 atom[]) {
     return false;
 }
 
-static void append_line(Point p0, Point p1, int winding, std::vector<Atom32>& atoms) {
+static void append_line(const AABB& clip, Point p0, Point p1, int winding,
+                        std::vector<Atom32>& atoms) {
     assert(winding == 1 || winding == -1);
 
     int top = graphics_round(p0.y);
@@ -102,6 +103,9 @@ static void append_line(Point p0, Point p1, int winding, std::vector<Atom32>& at
     if (top > bottom) {
         std::swap(top, bottom);
     }
+    assert(top >= clip.top());
+    assert(bottom <= clip.bottom());
+
     const float m = (p1.x - p0.x) / (p1.y - p0.y);
     float x = p0.x + m * (top - p0.y + 0.5f) + 0.5f;
 
@@ -111,7 +115,7 @@ static void append_line(Point p0, Point p1, int winding, std::vector<Atom32>& at
     }
 }
 
-static void clip_line(const AABB& bounds, Point p0, Point p1, std::vector<Atom32>& atoms) {
+static void clip_line(const AABB& clip, Point p0, Point p1, std::vector<Atom32>& atoms) {
     if (p0.y == p1.y) {
         return;
     }
@@ -122,21 +126,21 @@ static void clip_line(const AABB& bounds, Point p0, Point p1, std::vector<Atom32
         std::swap(p0, p1);
     }
     // now we're monotonic in Y: p0 <= p1
-    if (p1.y <= bounds.top() || p0.y >= bounds.bottom()) {
+    if (p1.y <= clip.top() || p0.y >= clip.bottom()) {
         return;
     }
 
     double dxdy = (double)(p1.x - p0.x) / (p1.y - p0.y);
-    if (p0.y < bounds.top()) {
-        p0.x += dxdy * (bounds.top() - p0.y);
-        p0.y = bounds.top();
+    if (p0.y < clip.top()) {
+        p0.x += dxdy * (clip.top() - p0.y);
+        p0.y = clip.top();
     }
-    if (p1.y > bounds.bottom()) {
-        p1.x += dxdy * (bounds.bottom() - p1.y);
-        p1.y = bounds.bottom();
+    if (p1.y > clip.bottom()) {
+        p1.x += dxdy * (clip.bottom() - p1.y);
+        p1.y = clip.bottom();
     }
 
-    // Now p0...p1 is strictly inside bounds vertically, so we just need to clip horizontally
+    // Now p0...p1 is strictly inside clip vertically, so we just need to clip horizontally
 
     if (p0.x > p1.x) {
         winding = -winding;
@@ -144,26 +148,26 @@ static void clip_line(const AABB& bounds, Point p0, Point p1, std::vector<Atom32
     }
     // now we're left-to-right: p0 .. p1
 
-    if (p1.x <= bounds.left()) {   // entirely to the left
-        p0.x = p1.x = bounds.left();
-        append_line(p0, p1, winding, atoms);
+    if (p1.x <= clip.left()) {   // entirely to the left
+        p0.x = p1.x = clip.left();
+        append_line(clip, p0, p1, winding, atoms);
     }
-    if (p0.x >= bounds.right()) {  // entirely to the right
-        p0.x = p1.x = bounds.right();
-        append_line(p0, p1, winding, atoms);
+    if (p0.x >= clip.right()) {  // entirely to the right
+        p0.x = p1.x = clip.right();
+        append_line(clip, p0, p1, winding, atoms);
     }
 
-    if (p0.x < bounds.left()) {
-        float y = p0.y + (bounds.left() - p0.x) / dxdy;
-        append_line({bounds.left(), p0.y}, {bounds.left(), y}, winding, atoms);
-        p0 = {bounds.left(), y};
+    if (p0.x < clip.left()) {
+        float y = p0.y + (clip.left() - p0.x) / dxdy;
+        append_line(clip, {clip.left(), p0.y}, {clip.left(), y}, winding, atoms);
+        p0 = {clip.left(), y};
     }
-    if (p1.x > bounds.right()) {
-        float y = p0.y + (bounds.right() - p0.x) / dxdy;
-        append_line({bounds.right(), y}, {bounds.right(), p1.y}, winding, atoms);
-        p1 = {bounds.right(), y};
+    if (p1.x > clip.right()) {
+        float y = p0.y + (clip.right() - p0.x) / dxdy;
+        append_line(clip, {clip.right(), y}, {clip.right(), p1.y}, winding, atoms);
+        p1 = {clip.right(), y};
     }
-    append_line(p0, p1, winding, atoms);
+    append_line(clip, p0, p1, winding, atoms);
 }
 
 HitTester::HitTester() {
