@@ -19,6 +19,11 @@ namespace rive {
         AABB();
         AABB(const AABB& copy);
         AABB(float minX, float minY, float maxX, float maxY);
+        
+        float left() const { return minX; }
+        float top() const { return minY; }
+        float right() const { return maxX; }
+        float bottom() const { return maxY; }
 
         inline const float* values() const { return buffer; }
 
