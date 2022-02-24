@@ -3,6 +3,7 @@
 
 #include "rive/math/aabb.hpp"
 #include "rive/math/vec2d.hpp"
+#include <cstdint>
 #include <vector>
 
 namespace rive {

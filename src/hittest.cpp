@@ -1,4 +1,6 @@
 #include "rive/hittest.hpp"
+
+#include <algorithm>
 #include <assert.h>
 #include <cmath>
 
